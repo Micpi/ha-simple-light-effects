@@ -1,58 +1,8 @@
-candle:
-  name: Effet Bougie
-  description: Simule une bougie sur une lumière existante.
-  fields:
-    entity_id:
-      name: Entité
-      description: "La lumière cible (ex: light.cuisine)."
-      required: true
-      selector:
-        entity:
-          domain: light
-    brightness_scale:
-      name: Intensité Max
-      description: Luminosité maximale (1-100).
-      default: 50
-      selector:
-        number:
-          min: 1
-          max: 100
+# ... (Gardez les anciens : candle, strobe, police, color_loop, lightning, heartbeat, stop)
 
-strobe:
-  name: Effet Stroboscope
-  description: Fait clignoter une lumière rapidement.
-  fields:
-    entity_id:
-      name: Entité
-      description: La lumière cible.
-      required: true
-      selector:
-        entity:
-          domain: light
-    speed:
-      name: Vitesse
-      description: "Délai entre les flashs en secondes (ex: 0.5)."
-      default: 0.5
-      selector:
-        number:
-          min: 0.1
-          max: 5.0
-          step: 0.1
-
-stop:
-  name: Arrêter l'effet
-  description: Arrête l'effet en cours sur l'entité.
-  fields:
-    entity_id:
-      name: Entité
-      required: true
-      selector:
-        entity:
-          domain: light
-          
-alerte:
-  name: Effet Alerte
-  description: Alterne violemment entre 10% et 100% de luminosité.
+neon:
+  name: Néon Défectueux
+  description: Scintillement irrégulier comme un vieux tube néon.
   fields:
     entity_id:
       name: Entité
@@ -61,9 +11,9 @@ alerte:
         entity:
           domain: light
 
-respiration:
-  name: Effet Respiration
-  description: Monte et descend doucement la lumière, comme une respiration.
+lighthouse:
+  name: Phare
+  description: Flash puissant suivi d'une longue extinction.
   fields:
     entity_id:
       name: Entité
@@ -72,18 +22,17 @@ respiration:
         entity:
           domain: light
     speed:
-      name: Vitesse de transition
+      name: Vitesse de rotation
       default: 2.0
       selector:
         number:
-          min: 0.5
+          min: 1.0
           max: 10.0
           step: 0.5
-          
-# Ajoutez à la fin de services.yaml
-lightning:
-  name: Effet Orage
-  description: Flashs aléatoires comme des éclairs.
+
+sos:
+  name: Signal SOS
+  description: Code Morse (...) (---) (...).
   fields:
     entity_id:
       name: Entité
@@ -92,9 +41,9 @@ lightning:
         entity:
           domain: light
 
-heartbeat:
-  name: Battement de cœur
-  description: Pulsation rythmique.
+campfire:
+  name: Feu de camp
+  description: Flamme intense avec craquements de bois occasionnels.
   fields:
     entity_id:
       name: Entité

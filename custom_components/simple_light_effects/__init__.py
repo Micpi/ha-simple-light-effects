@@ -7,18 +7,14 @@ from homeassistant.const import ATTR_ENTITY_ID, SERVICE_TURN_ON
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
-
-# Stockage des tâches
 RUNNING_TASKS = {}
 
-# 1. Configuration via YAML (On le garde vide pour compatibilité, mais on ne l'utilise plus)
 async def async_setup(hass: HomeAssistant, config: dict):
     return True
 
-# 2. Configuration via UI (C'est la nouvelle méthode !)
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     
-    # --- LOGIQUE DES EFFETS (Copiée de votre version précédente) ---
+    # --- HELPER: Nettoyage ---
     async def stop_effect_logic(entity_id):
         if entity_id in RUNNING_TASKS:
             task = RUNNING_TASKS.pop(entity_id)
@@ -28,7 +24,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             except asyncio.CancelledError:
                 pass
 
-    # --- DEFINITION DES SERVICES ---
+    # ================= ANCIENS EFFETS =================
+
     async def handle_candle(call: ServiceCall):
         entity_id = call.data.get(ATTR_ENTITY_ID)
         brightness_scale = call.data.get("brightness_scale", 50)
@@ -116,30 +113,125 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             except asyncio.CancelledError: pass
         RUNNING_TASKS[entity_id] = hass.async_create_task(loop())
 
+    # ================= NOUVEAUX EFFETS =================
+
+    # 7. NEON DEFECTUEUX
+    async def handle_neon(call: ServiceCall):
+        entity_id = call.data.get(ATTR_ENTITY_ID)
+        await stop_effect_logic(entity_id)
+        async def loop():
+            try:
+                while True:
+                    # Grésillement rapide
+                    for _ in range(random.randint(2, 6)):
+                        bright = random.choice([0, 100, 20])
+                        await hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": entity_id, "brightness_pct": bright, "transition": 0})
+                        await asyncio.sleep(random.uniform(0.05, 0.15))
+                    
+                    # Stabilisation temporaire
+                    await hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": entity_id, "brightness_pct": 90, "transition": 0.1})
+                    await asyncio.sleep(random.uniform(2.0, 5.0))
+            except asyncio.CancelledError: pass
+        RUNNING_TASKS[entity_id] = hass.async_create_task(loop())
+
+    # 8. PHARE (LIGHTHOUSE)
+    async def handle_lighthouse(call: ServiceCall):
+        entity_id = call.data.get(ATTR_ENTITY_ID)
+        speed = call.data.get("speed", 2.0) # Vitesse de rotation
+        await stop_effect_logic(entity_id)
+        async def loop():
+            try:
+                while True:
+                    # Flash rapide (Le phare nous fait face)
+                    await hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": entity_id, "brightness_pct": 100, "transition": 0.5})
+                    await asyncio.sleep(0.5)
+                    # Extinction lente (Le phare tourne)
+                    await hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": entity_id, "brightness_pct": 1, "transition": speed})
+                    await asyncio.sleep(speed)
+            except asyncio.CancelledError: pass
+        RUNNING_TASKS[entity_id] = hass.async_create_task(loop())
+
+    # 9. SIGNAL SOS
+    async def handle_sos(call: ServiceCall):
+        entity_id = call.data.get(ATTR_ENTITY_ID)
+        await stop_effect_logic(entity_id)
+        async def loop():
+            try:
+                while True:
+                    # 3 COURTS (S)
+                    for _ in range(3):
+                        await hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": entity_id, "brightness_pct": 100, "transition": 0})
+                        await asyncio.sleep(0.3)
+                        await hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": entity_id, "brightness_pct": 0, "transition": 0})
+                        await asyncio.sleep(0.3)
+                    await asyncio.sleep(0.5)
+                    
+                    # 3 LONGS (O)
+                    for _ in range(3):
+                        await hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": entity_id, "brightness_pct": 100, "transition": 0})
+                        await asyncio.sleep(1.0)
+                        await hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": entity_id, "brightness_pct": 0, "transition": 0})
+                        await asyncio.sleep(0.3)
+                    await asyncio.sleep(0.5)
+                    
+                    # 3 COURTS (S)
+                    for _ in range(3):
+                        await hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": entity_id, "brightness_pct": 100, "transition": 0})
+                        await asyncio.sleep(0.3)
+                        await hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": entity_id, "brightness_pct": 0, "transition": 0})
+                        await asyncio.sleep(0.3)
+                    
+                    # Pause avant de répéter
+                    await asyncio.sleep(3.0)
+            except asyncio.CancelledError: pass
+        RUNNING_TASKS[entity_id] = hass.async_create_task(loop())
+
+    # 10. FEU DE CAMP
+    async def handle_campfire(call: ServiceCall):
+        entity_id = call.data.get(ATTR_ENTITY_ID)
+        await stop_effect_logic(entity_id)
+        async def loop():
+            try:
+                while True:
+                    # Variation douce de base
+                    await hass.services.async_call("light", SERVICE_TURN_ON, {
+                        "entity_id": entity_id, "brightness_pct": random.randint(40, 80),
+                        "transition": random.uniform(0.5, 1.5)
+                    })
+                    await asyncio.sleep(random.uniform(0.2, 1.0))
+                    
+                    # Occasionnellement : Craquement du bois (chute brutale)
+                    if random.random() < 0.2: # 20% de chance
+                        await hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": entity_id, "brightness_pct": 10, "transition": 0.05})
+                        await asyncio.sleep(0.1)
+                        # Remontée rapide (étincelle)
+                        await hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": entity_id, "brightness_pct": 90, "transition": 0.1})
+                        await asyncio.sleep(0.2)
+            except asyncio.CancelledError: pass
+        RUNNING_TASKS[entity_id] = hass.async_create_task(loop())
+
     async def handle_stop(call: ServiceCall):
         entity_id = call.data.get(ATTR_ENTITY_ID)
         await stop_effect_logic(entity_id)
         await hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": entity_id, "brightness_pct": 80})
 
-    # Enregistrement des services
+    # ENREGISTREMENT TOTAL
     hass.services.async_register(DOMAIN, "candle", handle_candle)
     hass.services.async_register(DOMAIN, "strobe", handle_strobe)
-    hass.services.async_register(DOMAIN, "alerte", handle_pulse_fast)
-    hass.services.async_register(DOMAIN, "respiration", handle_breath)
+    hass.services.async_register(DOMAIN, "police", handle_pulse_fast)
+    hass.services.async_register(DOMAIN, "color_loop", handle_breath)
     hass.services.async_register(DOMAIN, "lightning", handle_lightning)
     hass.services.async_register(DOMAIN, "heartbeat", handle_heartbeat)
+    hass.services.async_register(DOMAIN, "neon", handle_neon)        # NEW
+    hass.services.async_register(DOMAIN, "lighthouse", handle_lighthouse) # NEW
+    hass.services.async_register(DOMAIN, "sos", handle_sos)          # NEW
+    hass.services.async_register(DOMAIN, "campfire", handle_campfire) # NEW
     hass.services.async_register(DOMAIN, "stop", handle_stop)
 
     return True
 
-# 3. Suppression de l'intégration (Nettoyage)
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
-    # On supprime les services quand on retire l'intégration
-    hass.services.async_remove(DOMAIN, "candle")
-    hass.services.async_remove(DOMAIN, "strobe")
-    hass.services.async_remove(DOMAIN, "alerte")
-    hass.services.async_remove(DOMAIN, "respiration")
-    hass.services.async_remove(DOMAIN, "lightning")
-    hass.services.async_remove(DOMAIN, "heartbeat")
-    hass.services.async_remove(DOMAIN, "stop")
+    services = ["candle", "strobe", "police", "color_loop", "lightning", "heartbeat", "neon", "lighthouse", "sos", "campfire", "stop"]
+    for s in services:
+        hass.services.async_remove(DOMAIN, s)
     return True
