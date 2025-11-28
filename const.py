@@ -1,0 +1,1 @@
+DOMAIN = "simple_light_effects"
