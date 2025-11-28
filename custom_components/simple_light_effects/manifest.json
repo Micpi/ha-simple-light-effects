@@ -1,11 +1,11 @@
 {
   "domain": "simple_light_effects",
   "name": "Simple Light Effects",
-  "config_flow": true, 
+  "config_flow": true,
   "documentation": "https://github.com/votre_repo",
   "dependencies": [],
   "codeowners": [],
   "requirements": [],
-  "version": "1.0.0",
+  "version": "1.0.1",
   "iot_class": "local_polling"
 }
