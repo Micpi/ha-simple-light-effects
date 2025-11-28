@@ -176,3 +176,152 @@ cards:
       target: {}
       data:
         entity_id: light.votre_lumiere
+
+---
+
+## 🎛️ Tutoriel : Créer une Console de Contrôle Universelle
+
+Au lieu de créer un bouton par effet, vous pouvez créer une interface "tout-en-un" avec un menu déroulant et des curseurs pour régler la vitesse et l'intensité dynamiquement.
+
+### Étape 1 : Créer les Entrées (Helpers)
+
+Allez dans **Paramètres** > **Appareils et services** > **Entrées** > **Créer une entrée**. Créez les 3 éléments suivants :
+
+**1. Le Menu de choix (Liste déroulante)**
+* **Nom :** `Mode Effet Cuisine` (ou adaptez le nom à votre pièce)
+* **Options** (Respectez exactement cette liste) :
+  * Arrêt
+  * Bougie
+  * Stroboscope
+  * Alerte
+  * Respiration
+  * Orage
+  * Coeur
+  * Néon
+  * Phare
+  * SOS
+  * Feu de camp
+* **ID d'entité :** `input_select.mode_effet_cuisine`
+
+**2. Le Curseur Vitesse (Nombre)**
+* **Nom :** `Vitesse Effet`
+* **Min/Max :** 0.1 / 5.0
+* **Pas :** 0.1
+* **Unité :** sec
+* **ID d'entité :** `input_number.vitesse_effet`
+
+**3. Le Curseur Intensité (Nombre)**
+* **Nom :** `Intensité Effet`
+* **Min/Max :** 10 / 100
+* **Pas :** 5
+* **Unité :** %
+* **ID d'entité :** `input_number.intensite_effet`
+
+### Étape 2 : L'Automatisation
+
+Créez une nouvelle automatisation en mode YAML.
+> **Note :** Pensez à remplacer `light.cuisine` par votre propre lumière (ex: `light.salon`) dans le code ci-dessous.
+
+```yaml
+alias: "Système : Contrôleur Universel Effets"
+mode: restart
+trigger:
+  - platform: state
+    entity_id:
+      - input_select.mode_effet_cuisine
+      - input_number.vitesse_effet
+      - input_number.intensite_effet
+action:
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: input_select.mode_effet_cuisine
+            state: "Arrêt"
+        sequence:
+          - action: simple_light_effects.stop
+            data:
+              entity_id: light.cuisine
+      - conditions:
+          - condition: state
+            entity_id: input_select.mode_effet_cuisine
+            state: "Bougie"
+        sequence:
+          - action: simple_light_effects.candle
+            data:
+              entity_id: light.cuisine
+              brightness_scale: "{{ states('input_number.intensite_effet') | int }}"
+      - conditions:
+          - condition: state
+            entity_id: input_select.mode_effet_cuisine
+            state: "Stroboscope"
+        sequence:
+          - action: simple_light_effects.strobe
+            data:
+              entity_id: light.cuisine
+              speed: "{{ states('input_number.vitesse_effet') | float }}"
+      - conditions:
+          - condition: state
+            entity_id: input_select.mode_effet_cuisine
+            state: "Alerte"
+        sequence:
+          - action: simple_light_effects.police
+            data:
+              entity_id: light.cuisine
+      - conditions:
+          - condition: state
+            entity_id: input_select.mode_effet_cuisine
+            state: "Respiration"
+        sequence:
+          - action: simple_light_effects.color_loop
+            data:
+              entity_id: light.cuisine
+              speed: "{{ states('input_number.vitesse_effet') | float }}"
+      - conditions:
+          - condition: state
+            entity_id: input_select.mode_effet_cuisine
+            state: "Orage"
+        sequence:
+          - action: simple_light_effects.lightning
+            data:
+              entity_id: light.cuisine
+      - conditions:
+          - condition: state
+            entity_id: input_select.mode_effet_cuisine
+            state: "Coeur"
+        sequence:
+          - action: simple_light_effects.heartbeat
+            data:
+              entity_id: light.cuisine
+      - conditions:
+          - condition: state
+            entity_id: input_select.mode_effet_cuisine
+            state: "Néon"
+        sequence:
+          - action: simple_light_effects.neon
+            data:
+              entity_id: light.cuisine
+      - conditions:
+          - condition: state
+            entity_id: input_select.mode_effet_cuisine
+            state: "Phare"
+        sequence:
+          - action: simple_light_effects.lighthouse
+            data:
+              entity_id: light.cuisine
+              speed: "{{ states('input_number.vitesse_effet') | float }}"
+      - conditions:
+          - condition: state
+            entity_id: input_select.mode_effet_cuisine
+            state: "SOS"
+        sequence:
+          - action: simple_light_effects.sos
+            data:
+              entity_id: light.cuisine
+      - conditions:
+          - condition: state
+            entity_id: input_select.mode_effet_cuisine
+            state: "Feu de camp"
+        sequence:
+          - action: simple_light_effects.campfire
+            data:
+              entity_id: light.cuisine
