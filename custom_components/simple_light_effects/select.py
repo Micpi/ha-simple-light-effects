@@ -13,12 +13,24 @@ class EffectModeSelect(SelectEntity):
         self._coordinator = coordinator
         self._attr_name = f"{name} Mode Effet"
         self._attr_unique_id = f"{coordinator.light_id}_effect_mode"
-        self._attr_options = ["Arrêt", "Bougie", "Stroboscope", "Phare"] # Ajoutez les autres ici
+        # VOICI LA LISTE COMPLÈTE
+        self._attr_options = [
+            "Arrêt",
+            "Bougie",
+            "Stroboscope",
+            "Alerte",
+            "Respiration",
+            "Orage",
+            "Coeur",
+            "Néon",
+            "Phare",
+            "SOS",
+            "Feu de camp"
+        ]
         self._attr_current_option = "Arrêt"
         self._attr_icon = "mdi:creation"
 
     async def async_select_option(self, option: str) -> None:
-        """Appelé quand l'utilisateur change le menu"""
         self._attr_current_option = option
         await self._coordinator.update_settings(effect=option)
-        self.async_write_ha_state() # Met à jour l'interface
+        self.async_write_ha_state()

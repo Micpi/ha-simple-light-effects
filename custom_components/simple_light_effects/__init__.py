@@ -9,48 +9,35 @@ from .const import DOMAIN, PLATFORMS, CONF_ENTITY_ID
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
-    # 1. On récupère la lumière cible choisie lors de l'install
     target_light = entry.data[CONF_ENTITY_ID]
-    
-    # 2. On crée le coordinateur (le chef d'orchestre pour CETTE lumière)
     coordinator = EffectsCoordinator(hass, target_light)
-    
-    # 3. On le stocke dans la mémoire de HA pour que les boutons puissent l'utiliser
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
-    
-    # 4. On charge les entités (Menu et Curseurs)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
-    # Nettoyage
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    await coordinator.stop_effect() # On arrête tout avant de désinstaller
+    await coordinator.stop_effect()
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
     return unload_ok
 
-# --- LE COORDINATEUR (LA LOGIQUE) ---
+# --- COORDINATEUR COMPLET ---
 class EffectsCoordinator:
     def __init__(self, hass, light_entity_id):
         self.hass = hass
         self.light_id = light_entity_id
         self.task = None
-        # Valeurs par défaut
         self.current_effect = "Arrêt"
         self.speed = 1.0
         self.intensity = 50
 
     async def update_settings(self, effect=None, speed=None, intensity=None):
-        """Appelé quand l'utilisateur touche à un bouton"""
         if effect: self.current_effect = effect
         if speed: self.speed = speed
         if intensity: self.intensity = intensity
-        
-        # On relance l'effet avec les nouveaux paramètres
         await self.start_effect()
 
     async def stop_effect(self):
@@ -66,27 +53,38 @@ class EffectsCoordinator:
         await self.stop_effect()
         
         if self.current_effect == "Arrêt":
-            # Remise à zéro propre
             await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 100, "effect": "none"})
             return
 
-        # Lancement de la boucle correspondante
+        # AIGUILLAGE DES EFFETS
         if self.current_effect == "Bougie":
             self.task = self.hass.async_create_task(self._loop_candle())
         elif self.current_effect == "Stroboscope":
             self.task = self.hass.async_create_task(self._loop_strobe())
+        elif self.current_effect == "Alerte":
+            self.task = self.hass.async_create_task(self._loop_pulse_fast())
+        elif self.current_effect == "Respiration":
+            self.task = self.hass.async_create_task(self._loop_breath())
+        elif self.current_effect == "Orage":
+            self.task = self.hass.async_create_task(self._loop_lightning())
+        elif self.current_effect == "Coeur":
+            self.task = self.hass.async_create_task(self._loop_heartbeat())
+        elif self.current_effect == "Néon":
+            self.task = self.hass.async_create_task(self._loop_neon())
         elif self.current_effect == "Phare":
             self.task = self.hass.async_create_task(self._loop_lighthouse())
-        # ... Ajoutez les autres 'elif' ici pour les autres effets ...
+        elif self.current_effect == "SOS":
+            self.task = self.hass.async_create_task(self._loop_sos())
+        elif self.current_effect == "Feu de camp":
+            self.task = self.hass.async_create_task(self._loop_campfire())
 
-    # --- LES BOUCLES (Versions simplifiées qui utilisent self.speed / self.intensity) ---
+    # --- BOUCLES D'EFFETS ---
+
     async def _loop_candle(self):
         try:
             while True:
-                # Utilise self.intensity
                 await self.hass.services.async_call("light", SERVICE_TURN_ON, {
-                    "entity_id": self.light_id, 
-                    "brightness_pct": random.randint(10, int(self.intensity)),
+                    "entity_id": self.light_id, "brightness_pct": random.randint(10, int(self.intensity)),
                     "transition": random.uniform(0.5, 2.0)
                 })
                 await asyncio.sleep(random.uniform(0.5, 3.0))
@@ -96,8 +94,63 @@ class EffectsCoordinator:
         try:
             while True:
                 await self.hass.services.async_call("light", "toggle", {"entity_id": self.light_id})
-                # Utilise self.speed
                 await asyncio.sleep(self.speed)
+        except asyncio.CancelledError: pass
+
+    async def _loop_pulse_fast(self):
+        try:
+            while True:
+                # Alerte ignore les réglages pour être percutant
+                await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 100, "transition": 0.1})
+                await asyncio.sleep(0.5)
+                await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 10, "transition": 0.1})
+                await asyncio.sleep(0.5)
+        except asyncio.CancelledError: pass
+
+    async def _loop_breath(self):
+        try:
+            while True:
+                # Utilise Vitesse
+                await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 100, "transition": self.speed})
+                await asyncio.sleep(self.speed)
+                await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 10, "transition": self.speed})
+                await asyncio.sleep(self.speed)
+        except asyncio.CancelledError: pass
+
+    async def _loop_lightning(self):
+        try:
+            while True:
+                count = random.randint(1, 3)
+                for _ in range(count):
+                    await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 100, "transition": 0})
+                    await asyncio.sleep(random.uniform(0.05, 0.2))
+                    await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 10, "transition": 0})
+                    await asyncio.sleep(random.uniform(0.05, 0.2))
+                await asyncio.sleep(random.uniform(2.0, 10.0))
+        except asyncio.CancelledError: pass
+
+    async def _loop_heartbeat(self):
+        try:
+            while True:
+                await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 100, "transition": 0.1})
+                await asyncio.sleep(0.2)
+                await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 10, "transition": 0.2})
+                await asyncio.sleep(0.2)
+                await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 80, "transition": 0.1})
+                await asyncio.sleep(0.2)
+                await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 10, "transition": 0.3})
+                await asyncio.sleep(1.0)
+        except asyncio.CancelledError: pass
+
+    async def _loop_neon(self):
+        try:
+            while True:
+                for _ in range(random.randint(2, 6)):
+                    bright = random.choice([0, int(self.intensity), 20])
+                    await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": bright, "transition": 0})
+                    await asyncio.sleep(random.uniform(0.05, 0.15))
+                await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 90, "transition": 0.1})
+                await asyncio.sleep(random.uniform(2.0, 5.0))
         except asyncio.CancelledError: pass
 
     async def _loop_lighthouse(self):
@@ -105,7 +158,48 @@ class EffectsCoordinator:
             while True:
                 await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 100, "transition": 0.5})
                 await asyncio.sleep(0.5)
-                # Utilise self.speed
+                # Utilise Vitesse pour la rotation
                 await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 1, "transition": self.speed})
                 await asyncio.sleep(self.speed)
+        except asyncio.CancelledError: pass
+
+    async def _loop_sos(self):
+        try:
+            while True:
+                # S
+                for _ in range(3):
+                    await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 100, "transition": 0})
+                    await asyncio.sleep(0.3)
+                    await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 0, "transition": 0})
+                    await asyncio.sleep(0.3)
+                await asyncio.sleep(0.5)
+                # O
+                for _ in range(3):
+                    await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 100, "transition": 0})
+                    await asyncio.sleep(1.0)
+                    await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 0, "transition": 0})
+                    await asyncio.sleep(0.3)
+                await asyncio.sleep(0.5)
+                # S
+                for _ in range(3):
+                    await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 100, "transition": 0})
+                    await asyncio.sleep(0.3)
+                    await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 0, "transition": 0})
+                    await asyncio.sleep(0.3)
+                await asyncio.sleep(3.0)
+        except asyncio.CancelledError: pass
+
+    async def _loop_campfire(self):
+        try:
+            while True:
+                await self.hass.services.async_call("light", SERVICE_TURN_ON, {
+                    "entity_id": self.light_id, "brightness_pct": random.randint(int(self.intensity)-20, int(self.intensity)),
+                    "transition": random.uniform(0.5, 1.5)
+                })
+                await asyncio.sleep(random.uniform(0.2, 1.0))
+                if random.random() < 0.2:
+                    await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 10, "transition": 0.05})
+                    await asyncio.sleep(0.1)
+                    await self.hass.services.async_call("light", SERVICE_TURN_ON, {"entity_id": self.light_id, "brightness_pct": 90, "transition": 0.1})
+                    await asyncio.sleep(0.2)
         except asyncio.CancelledError: pass
