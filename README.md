@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="images/icon.png" height="150" alt="Logo Simple Light Effects">
+</p>
+
 # 🕯️ Simple Light Effects pour Home Assistant
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
