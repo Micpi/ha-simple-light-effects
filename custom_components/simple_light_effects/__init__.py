@@ -5,6 +5,7 @@ import os
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.const import SERVICE_TURN_ON
+from homeassistant.components import persistent_notification
 from homeassistant.components.http import StaticPathConfig
 from .const import DOMAIN, PLATFORMS, CONF_ENTITY_ID
 
@@ -81,7 +82,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         pass
 
     # Notify user to add resource
-    hass.components.persistent_notification.async_create(
+    persistent_notification.async_create(
+        hass,
         "La carte **Simple Light Effects** a été installée.<br><br>"
         "Pour l'utiliser, vous devez ajouter cette ressource dans vos tableaux de bord :<br>"
         "<ul>"
