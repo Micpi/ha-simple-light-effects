@@ -5,7 +5,7 @@
 # 🕯️ Simple Light Effects pour Home Assistant
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
-[![Version](https://img.shields.io/badge/version-1.1.4-blue.svg)](https://github.com/votre_pseudo/ha-simple-light-effects)
+[![Version](https://img.shields.io/badge/version-1.1.5-blue.svg)](https://github.com/votre_pseudo/ha-simple-light-effects)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.11-brightgreen.svg)](https://www.home-assistant.io/)
 
 Une intégration personnalisée (Custom Component) pour **Home Assistant** qui ajoute des effets d'éclairage dynamiques à **n'importe quelle lumière** (ampoules connectées, rubans LED, variateurs).
@@ -48,7 +48,23 @@ Intégration personnalisée pour Home Assistant offrant des effets lumineux dyna
 
 ## Configuration
 
-Après redémarrage : Paramètres → Appareils et services → + Ajouter une intégration → Rechercher "Simple Light Effects". Aucune configuration YAML requise.
+Après redémarrage : Paramètres → Appareils et services → + Ajouter une intégration → Rechercher "Simple Light Effects".
+
+### Ajouter la carte au tableau de bord
+
+Pour utiliser l'interface graphique, vous devez ajouter la ressource JavaScript :
+
+1. Allez dans **Paramètres** > **Tableaux de bord** > **...** (en haut à droite) > **Ressources**.
+2. Cliquez sur **Ajouter une ressource**.
+3. Entrez l'URL : `/local/simple-light-effects-card.js`
+4. Choisissez le type : **Module JavaScript**.
+5. Cliquez sur **Créer**.
+
+Ensuite, ajoutez la carte à votre tableau de bord :
+
+```yaml
+type: custom:simple-light-effects-card
+```
 
 ---
 

@@ -79,6 +79,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 shutil.copyfile(src, dst)
     except Exception:
         pass
+
+    # Notify user to add resource
+    hass.components.persistent_notification.async_create(
+        "La carte **Simple Light Effects** a été installée.<br><br>"
+        "Pour l'utiliser, vous devez ajouter cette ressource dans vos tableaux de bord :<br>"
+        "<ul>"
+        "<li>URL: `/local/simple-light-effects-card.js`</li>"
+        "<li>Type: Module JavaScript</li>"
+        "</ul>"
+        "<br>Ou via la configuration YAML :<br>"
+        "<pre>resources:\n  - url: /local/simple-light-effects-card.js\n    type: module</pre>",
+        title="Simple Light Effects - Configuration requise",
+        notification_id="simple_light_effects_card_setup"
+    )
         
     return True
 
