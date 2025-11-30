@@ -8,6 +8,45 @@ from .const import DOMAIN, PLATFORMS, CONF_ENTITY_ID
 
 _LOGGER = logging.getLogger(__name__)
 
+async def async_setup(hass: HomeAssistant, config: dict):
+    """Set up the Simple Light Effects component services."""
+    
+    async def handle_effect_service(call: ServiceCall):
+        service_to_effect = {
+            "candle": "Bougie",
+            "strobe": "Stroboscope",
+            "police": "Alerte",
+            "color_loop": "Respiration",
+            "lightning": "Orage",
+            "heartbeat": "Coeur",
+            "stop": "Arrêt",
+            "neon": "Néon",
+            "lighthouse": "Phare",
+            "sos": "SOS",
+            "campfire": "Feu de camp"
+        }
+        
+        effect_name = service_to_effect.get(call.service)
+        if not effect_name:
+            return
+
+        entity_ids = call.data.get("entity_id", [])
+        if isinstance(entity_ids, str):
+            entity_ids = [entity_ids]
+            
+        speed = call.data.get("speed")
+        intensity = call.data.get("brightness_scale")
+
+        if DOMAIN in hass.data:
+            for coordinator in hass.data[DOMAIN].values():
+                if coordinator.light_id in entity_ids:
+                    await coordinator.update_settings(effect=effect_name, speed=speed, intensity=intensity)
+
+    for service in ["candle", "strobe", "police", "color_loop", "lightning", "heartbeat", "stop", "neon", "lighthouse", "sos", "campfire"]:
+        hass.services.async_register(DOMAIN, service, handle_effect_service)
+
+    return True
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     target_light = entry.data[CONF_ENTITY_ID]
     coordinator = EffectsCoordinator(hass, target_light)

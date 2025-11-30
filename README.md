@@ -5,7 +5,7 @@
 # 🕯️ Simple Light Effects pour Home Assistant
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
-[![Version](https://img.shields.io/badge/version-1.1.2-blue.svg)](https://github.com/votre_pseudo/ha-simple-light-effects)
+[![Version](https://img.shields.io/badge/version-1.1.3-blue.svg)](https://github.com/votre_pseudo/ha-simple-light-effects)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.11-brightgreen.svg)](https://www.home-assistant.io/)
 
 Une intégration personnalisée (Custom Component) pour **Home Assistant** qui ajoute des effets d'éclairage dynamiques à **n'importe quelle lumière** (ampoules connectées, rubans LED, variateurs).
@@ -16,10 +16,6 @@ Contrairement aux effets natifs des ampoules (souvent limités), cette intégrat
 
 ## ✨ Fonctionnalités
 <!-- Simple Light Effects - README nettoyé -->
-
-<p align="center">
-  <img src="images/icon.png" height="120" alt="Simple Light Effects">
-</p>
 
 # Simple Light Effects pour Home Assistant
 
