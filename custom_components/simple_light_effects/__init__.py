@@ -1,9 +1,11 @@
 import asyncio
 import random
 import logging
+import os
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.const import SERVICE_TURN_ON
+from homeassistant.components.http import StaticPathConfig
 from .const import DOMAIN, PLATFORMS, CONF_ENTITY_ID
 
 _LOGGER = logging.getLogger(__name__)
@@ -11,6 +13,18 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup(hass: HomeAssistant, config: dict):
     """Set up the Simple Light Effects component services."""
     
+    # Register static path for the card
+    try:
+        await hass.http.async_register_static_paths([
+            StaticPathConfig(
+                "/simple_light_effects/card.js",
+                hass.config.path("custom_components/simple_light_effects/www/simple-light-effects-card.js"),
+                True,
+            )
+        ])
+    except Exception:
+        _LOGGER.debug("Could not register static path at startup")
+
     async def handle_effect_service(call: ServiceCall):
         service_to_effect = {
             "candle": "Bougie",
@@ -34,13 +48,17 @@ async def async_setup(hass: HomeAssistant, config: dict):
         if isinstance(entity_ids, str):
             entity_ids = [entity_ids]
             
-        speed = call.data.get("speed")
-        intensity = call.data.get("brightness_scale")
+        speed = call.data.get("speed", 1.0)
+        intensity = call.data.get("brightness_scale", 50)
 
-        if DOMAIN in hass.data:
-            for coordinator in hass.data[DOMAIN].values():
-                if coordinator.light_id in entity_ids:
-                    await coordinator.update_settings(effect=effect_name, speed=speed, intensity=intensity)
+        # Ensure manager exists
+        if DOMAIN not in hass.data:
+            hass.data[DOMAIN] = EffectsManager(hass)
+        
+        manager = hass.data[DOMAIN]
+        
+        for entity_id in entity_ids:
+            await manager.start_effect(entity_id, effect_name, speed, intensity)
 
     for service in ["candle", "strobe", "police", "color_loop", "lightning", "heartbeat", "stop", "neon", "lighthouse", "sos", "campfire"]:
         hass.services.async_register(DOMAIN, service, handle_effect_service)
@@ -48,20 +66,42 @@ async def async_setup(hass: HomeAssistant, config: dict):
     return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
-    target_light = entry.data[CONF_ENTITY_ID]
-    coordinator = EffectsCoordinator(hass, target_light)
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][entry.entry_id] = coordinator
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    hass.data.setdefault(DOMAIN, EffectsManager(hass))
+    
+    # Copy card to www if possible
+    try:
+        www_dir = hass.config.path("www")
+        if www_dir and os.path.isdir(www_dir):
+            src = hass.config.path("custom_components/simple_light_effects/www/simple-light-effects-card.js")
+            dst = os.path.join(www_dir, "simple-light-effects-card.js")
+            import shutil
+            if (not os.path.exists(dst)) or (os.path.getmtime(src) > os.path.getmtime(dst)):
+                shutil.copyfile(src, dst)
+    except Exception:
+        pass
+        
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
-    coordinator = hass.data[DOMAIN][entry.entry_id]
-    await coordinator.stop_effect()
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id)
-    return unload_ok
+    if DOMAIN in hass.data:
+        await hass.data[DOMAIN].stop_all()
+    return True
+
+class EffectsManager:
+    def __init__(self, hass):
+        self.hass = hass
+        self.coordinators = {}
+
+    async def start_effect(self, entity_id, effect, speed, intensity):
+        if entity_id not in self.coordinators:
+            self.coordinators[entity_id] = EffectsCoordinator(self.hass, entity_id)
+        
+        await self.coordinators[entity_id].update_settings(effect, speed, intensity)
+
+    async def stop_all(self):
+        for coordinator in self.coordinators.values():
+            await coordinator.stop_effect()
+        self.coordinators.clear()
 
 # --- COORDINATEUR COMPLET ---
 class EffectsCoordinator:
@@ -75,9 +115,10 @@ class EffectsCoordinator:
 
     async def update_settings(self, effect=None, speed=None, intensity=None):
         if effect: self.current_effect = effect
-        if speed: self.speed = speed
-        if intensity: self.intensity = intensity
+        if speed: self.speed = float(speed)
+        if intensity: self.intensity = int(intensity)
         await self.start_effect()
+
 
     async def stop_effect(self):
         if self.task:
